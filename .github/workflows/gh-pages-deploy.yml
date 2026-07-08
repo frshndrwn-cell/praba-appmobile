@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages and use GitHub API
 
 on:
   push:
@@ -26,5 +26,26 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+
+  use_api:
+    runs-on: ubuntu-latest
+    needs: deploy
+    permissions: {}
+    steps:
+      - name: Use GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "GitHub Actions URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          
+          echo "Testing GitHub API access..."
+          curl --request GET \
+          --url "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          --header "Authorization: Bearer $GH_TOKEN" \
+          --silent \
+          --output /tmp/api_response.txt \
+          && echo "GitHub API response: $(cat /tmp/api_response.txt)"
